@@ -12,7 +12,7 @@ export default function Home() {
           Голосовий brain dump → структурований план дня.
         </p>
         <span className="rounded-full bg-zinc-900 px-4 py-1.5 text-xs font-medium text-white dark:bg-white dark:text-black">
-          Phase 0 · Deployed
+          Phase 0 · Live · autodeploy OK
         </span>
       </div>
     </main>
