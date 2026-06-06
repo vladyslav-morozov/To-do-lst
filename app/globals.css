@@ -10,6 +10,9 @@
 html, body { overscroll-behavior-y: none; touch-action: manipulation; }
 button { -webkit-tap-highlight-color: transparent; }
 
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

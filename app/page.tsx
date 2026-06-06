@@ -1,20 +1,31 @@
-export default function Home() {
+'use client';
+import { useState, useMemo } from 'react';
+import { Header, type Tab } from '@/components/Header';
+import { ProjectChips } from '@/components/ProjectChips';
+import { Fab } from '@/components/Fab';
+import { useTasks } from '@/hooks/useTasks';
+
+export default function Page() {
+  const [tab, setTab] = useState<Tab>('today');
+  const [project, setProject] = useState<string | null>(null);
+  const { tasks } = useTasks();
+
+  const projects = useMemo(() => {
+    const s = new Set<string>();
+    tasks.forEach(t => { if (t.project) s.add(t.project); });
+    return Array.from(s).sort();
+  }, [tasks]);
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-zinc-50 to-zinc-100 px-6 py-12 dark:from-zinc-950 dark:to-black">
-      <div className="flex w-full max-w-sm flex-col items-center gap-6 text-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-black text-3xl text-white shadow-lg dark:bg-white dark:text-black">
-          🐵
-        </div>
-        <h1 className="text-3xl font-bold tracking-tight text-black dark:text-white">
-          AI Planer
-        </h1>
-        <p className="text-base leading-relaxed text-zinc-600 dark:text-zinc-400">
-          Голосовий brain dump → структурований план дня.
+    <div className="min-h-dvh bg-neutral-950 text-neutral-100">
+      <Header tab={tab} onTab={setTab} />
+      <ProjectChips projects={projects} active={project} onSelect={setProject} />
+      <main className="px-4 py-3 pb-32">
+        <p className="text-neutral-500 text-sm">
+          {tasks.length === 0 ? 'Тапни мікрофон і вивали все, що в голові.' : `Tab: ${tab}, фільтр: ${project ?? 'усі'}`}
         </p>
-        <span className="rounded-full bg-zinc-900 px-4 py-1.5 text-xs font-medium text-white dark:bg-white dark:text-black">
-          Phase 0 · Live · autodeploy OK
-        </span>
-      </div>
-    </main>
+      </main>
+      <Fab onClick={() => alert('mic screen coming next task')} />
+    </div>
   );
 }
