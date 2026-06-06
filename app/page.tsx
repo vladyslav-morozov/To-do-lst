@@ -4,13 +4,18 @@ import { Header, type Tab } from '@/components/Header';
 import { ProjectChips } from '@/components/ProjectChips';
 import { Fab } from '@/components/Fab';
 import { TaskList } from '@/components/TaskList';
+import { MicScreen } from '@/components/MicScreen';
 import { useTasks } from '@/hooks/useTasks';
-import { isToday } from '@/lib/date';
+import { isToday, todayIso, defaultReminderAt } from '@/lib/date';
+import type { Task } from '@/lib/types';
+import type { ParsedTask } from '@/lib/schema';
 
 export default function Page() {
   const [tab, setTab] = useState<Tab>('today');
   const [project, setProject] = useState<string | null>(null);
-  const { tasks, update, remove, toggleDone } = useTasks();
+  const [micOpen, setMicOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const { tasks, addMany, update, remove, toggleDone } = useTasks();
 
   const projects = useMemo(() => {
     const s = new Set<string>();
@@ -30,6 +35,39 @@ export default function Page() {
       });
   }, [tasks, tab, project]);
 
+  const handleSubmit = async (text: string) => {
+    setLoading(true);
+    try {
+      const today = todayIso();
+      const knownProjects = projects;
+      const res = await fetch('/api/parse', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, today, knownProjects }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Parse failed');
+      }
+      const data: { tasks: ParsedTask[] } = await res.json();
+      const newTasks: Task[] = data.tasks.map(t => ({
+        id: crypto.randomUUID(),
+        title: t.title,
+        priority: t.priority,
+        estimateMin: t.estimateMin,
+        deadline: t.deadline,
+        reminderAt: t.reminderAt ?? defaultReminderAt(t.deadline),
+        project: t.project ?? undefined,
+        done: false,
+        createdAt: new Date().toISOString(),
+      }));
+      addMany(newTasks);
+      setMicOpen(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-dvh bg-neutral-950 text-neutral-100">
       <Header tab={tab} onTab={setTab} />
@@ -42,7 +80,14 @@ export default function Page() {
           onDelete={remove}
         />
       </main>
-      <Fab onClick={() => alert('mic screen coming next task')} />
+      <Fab onClick={() => setMicOpen(true)} />
+      {micOpen && (
+        <MicScreen
+          onCancel={() => setMicOpen(false)}
+          onSubmit={handleSubmit}
+          loading={loading}
+        />
+      )}
     </div>
   );
 }
