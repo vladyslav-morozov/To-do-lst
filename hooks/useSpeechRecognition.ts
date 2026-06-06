@@ -1,5 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// Web Speech API is not in stable TS lib — using loose types intentionally.
 'use client';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 declare global {
   interface Window {
@@ -10,15 +12,15 @@ declare global {
 
 export type SpeechState = 'idle' | 'recording' | 'unavailable';
 
+function detectAvailable(): SpeechState {
+  if (typeof window === 'undefined') return 'idle';
+  return window.SpeechRecognition || window.webkitSpeechRecognition ? 'idle' : 'unavailable';
+}
+
 export function useSpeechRecognition() {
-  const [state, setState] = useState<SpeechState>('idle');
+  const [state, setState] = useState<SpeechState>(detectAvailable);
   const [transcript, setTranscript] = useState('');
   const recRef = useRef<any>(null);
-
-  useEffect(() => {
-    const Ctor = (typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition));
-    if (!Ctor) setState('unavailable');
-  }, []);
 
   const start = useCallback(() => {
     const Ctor = window.SpeechRecognition || window.webkitSpeechRecognition;

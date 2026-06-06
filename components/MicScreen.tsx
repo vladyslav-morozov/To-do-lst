@@ -29,8 +29,8 @@ export function MicScreen({
     setError(null);
     try {
       await onSubmit(text);
-    } catch (e: any) {
-      setError(e?.message ?? 'Не вдалось розпарсити');
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Не вдалось розпарсити');
     }
   };
 
