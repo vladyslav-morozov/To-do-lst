@@ -17,17 +17,45 @@ function detectAvailable(): SpeechState {
   return window.SpeechRecognition || window.webkitSpeechRecognition ? 'idle' : 'unavailable';
 }
 
+function isIOS(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  return /iPad|iPhone|iPod/.test(navigator.userAgent);
+}
+
+function errorText(code: string): string {
+  switch (code) {
+    case 'not-allowed':
+    case 'service-not-allowed':
+      return 'Доступ до мікрофона заборонено. Перевір: Settings → Safari → Microphone (або тапни 🅰🅰 у адресному рядку).';
+    case 'no-speech':
+      return 'Нічого не почув. Спробуй ще раз.';
+    case 'audio-capture':
+      return 'Не зміг отримати аудіо. Перевір що мікрофон не зайнятий іншим додатком.';
+    case 'network':
+      return 'Помилка мережі під час розпізнавання.';
+    default:
+      return `Помилка розпізнавання: ${code}`;
+  }
+}
+
 export function useSpeechRecognition() {
   const [state, setState] = useState<SpeechState>(detectAvailable);
   const [transcript, setTranscript] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const recRef = useRef<any>(null);
+  const baseTextRef = useRef('');
 
   const start = useCallback(() => {
     const Ctor = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!Ctor) { setState('unavailable'); return; }
+
+    setError(null);
+    baseTextRef.current = transcript ? transcript + ' ' : '';
+
     const rec = new Ctor();
     rec.lang = 'uk-UA';
-    rec.continuous = true;
+    // iOS Safari: continuous mode unreliable. Use single-shot, accumulate manually.
+    rec.continuous = !isIOS();
     rec.interimResults = true;
 
     let finalText = '';
@@ -38,20 +66,25 @@ export function useSpeechRecognition() {
         if (r.isFinal) finalText += r[0].transcript;
         else interim += r[0].transcript;
       }
-      setTranscript((finalText + ' ' + interim).trim());
+      setTranscript((baseTextRef.current + finalText + ' ' + interim).trim());
     };
     rec.onerror = (e: any) => {
       console.warn('SR error', e);
+      setError(errorText(e?.error ?? 'unknown'));
       setState('idle');
     };
     rec.onend = () => {
       setState(s => (s === 'recording' ? 'idle' : s));
     };
-    setTranscript('');
-    rec.start();
-    recRef.current = rec;
-    setState('recording');
-  }, []);
+    try {
+      rec.start();
+      recRef.current = rec;
+      setState('recording');
+    } catch (e: any) {
+      setError(`Не вдалося стартувати: ${e?.message ?? e}`);
+      setState('idle');
+    }
+  }, [transcript]);
 
   const stop = useCallback(() => {
     recRef.current?.stop();
@@ -60,8 +93,9 @@ export function useSpeechRecognition() {
 
   const reset = useCallback(() => {
     setTranscript('');
+    setError(null);
     setState('idle');
   }, []);
 
-  return { state, transcript, setTranscript, start, stop, reset };
+  return { state, transcript, setTranscript, error, start, stop, reset };
 }

@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
 
 export function MicScreen({
@@ -11,28 +11,22 @@ export function MicScreen({
   onSubmit: (text: string) => Promise<void>;
   loading: boolean;
 }) {
-  const { state, transcript, setTranscript, start, stop } = useSpeechRecognition();
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (state === 'idle' && !transcript) {
-      // авто-старт при відкритті
-      start();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const { state, transcript, setTranscript, error: srError, start, stop } = useSpeechRecognition();
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const handleSubmit = async () => {
     if (state === 'recording') stop();
     const text = transcript.trim();
-    if (!text) { setError('Скажи або напиши щось'); return; }
-    setError(null);
+    if (!text) { setSubmitError('Скажи або напиши щось'); return; }
+    setSubmitError(null);
     try {
       await onSubmit(text);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Не вдалось розпарсити');
+      setSubmitError(e instanceof Error ? e.message : 'Не вдалось розпарсити');
     }
   };
+
+  const error = srError ?? submitError;
 
   return (
     <div className="fixed inset-0 z-50 bg-neutral-950 flex flex-col">
@@ -69,8 +63,12 @@ export function MicScreen({
             </svg>
           </button>
         )}
-        <p className="text-neutral-500 text-sm mt-4">
-          {state === 'recording' ? 'Слухаю…' : state === 'unavailable' ? '' : 'Тап щоб почати'}
+        <p className="text-neutral-500 text-sm mt-4 text-center">
+          {state === 'recording'
+            ? 'Слухаю…'
+            : state === 'unavailable'
+              ? ''
+              : 'Тапни мікрофон і почни говорити'}
         </p>
       </div>
 
