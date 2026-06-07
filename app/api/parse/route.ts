@@ -2,6 +2,56 @@ import Anthropic from '@anthropic-ai/sdk';
 import { systemPrompt } from '@/lib/prompt';
 import { ParseResponseSchema } from '@/lib/schema';
 
+type RawTask = {
+  title?: unknown;
+  priority?: unknown;
+  estimateMin?: unknown;
+  deadline?: unknown;
+  reminderAt?: unknown;
+  project?: unknown;
+};
+
+function clamp(n: number, min: number, max: number): number {
+  return Math.min(Math.max(n, min), max);
+}
+
+/**
+ * Normalize Claude's raw output to fit our schema:
+ * - reminderAt: append Z if no timezone given (treat as UTC)
+ * - estimateMin: round and clamp [5, 240]
+ * - title: trim
+ */
+function normalizeTasks(parsed: { tasks?: RawTask[] } | null): { tasks: unknown[] } {
+  const tasks = Array.isArray(parsed?.tasks) ? parsed!.tasks : [];
+  return {
+    tasks: tasks.map((t) => {
+      let reminderAt: string | null | undefined;
+      if (typeof t.reminderAt === 'string' && t.reminderAt.trim()) {
+        const s = t.reminderAt.trim();
+        // Add Z if missing timezone
+        reminderAt = /[Z+-]\d{0,2}:?\d{0,2}$|Z$/.test(s) ? s : `${s}Z`;
+      } else {
+        reminderAt = undefined;
+      }
+
+      const rawEstimate = Number(t.estimateMin);
+      const estimateMin = Number.isFinite(rawEstimate)
+        ? clamp(Math.round(rawEstimate), 5, 240)
+        : 30;
+
+      return {
+        title: typeof t.title === 'string' ? t.title.trim() : '',
+        priority: t.priority,
+        estimateMin,
+        deadline: t.deadline,
+        reminderAt,
+        project:
+          typeof t.project === 'string' && t.project.trim() ? t.project.trim() : null,
+      };
+    }),
+  };
+}
+
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
@@ -57,10 +107,15 @@ export async function POST(request: Request) {
     return Response.json({ error: 'AI returned non-JSON' }, { status: 502 });
   }
 
-  const result = ParseResponseSchema.safeParse(parsed);
+  const normalized = normalizeTasks(parsed as { tasks?: RawTask[] } | null);
+  const result = ParseResponseSchema.safeParse(normalized);
   if (!result.success) {
-    console.error('Schema mismatch:', result.error.flatten());
-    return Response.json({ error: 'AI returned invalid schema' }, { status: 502 });
+    const details = result.error.flatten();
+    console.error('Schema mismatch after normalization:', details, 'raw:', raw);
+    return Response.json(
+      { error: 'AI returned invalid schema', details, raw: raw.slice(0, 500) },
+      { status: 502 },
+    );
   }
 
   return Response.json(result.data);
