@@ -78,6 +78,14 @@ export default function Page() {
         createdAt: new Date().toISOString(),
       }));
       addMany(newTasks);
+      // Auto-switch to "Усі" if any new task is future-dated so the user
+      // immediately sees what was just added (avoids "looks like nothing saved").
+      const hasFuture = newTasks.some(t => t.deadline > today);
+      if (hasFuture && tab === 'today') {
+        setTab('all');
+      }
+      // Drop any active project filter so new tasks aren't hidden by it.
+      setProject(null);
       setMicOpen(false);
     } finally {
       setLoading(false);
