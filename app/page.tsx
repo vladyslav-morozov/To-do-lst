@@ -2,9 +2,8 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Header, type Tab } from '@/components/Header';
 import { ProjectChips } from '@/components/ProjectChips';
-import { Fab } from '@/components/Fab';
 import { TaskList } from '@/components/TaskList';
-import { MicScreen } from '@/components/MicScreen';
+import { Composer } from '@/components/Composer';
 import { ReminderBanner } from '@/components/ReminderBanner';
 import { useTasks } from '@/hooks/useTasks';
 import { useActiveReminders } from '@/hooks/useReminders';
@@ -14,9 +13,8 @@ import type { Task } from '@/lib/types';
 import type { ParsedTask } from '@/lib/schema';
 
 export default function Page() {
-  const [tab, setTab] = useState<Tab>('today');
+  const [tab, setTab] = useState<Tab>('all');
   const [project, setProject] = useState<string | null>(null);
-  const [micOpen, setMicOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const { tasks, addMany, update, remove, toggleDone } = useTasks();
   const reminders = useActiveReminders(tasks);
@@ -80,26 +78,23 @@ export default function Page() {
         createdAt: new Date().toISOString(),
       }));
       addMany(newTasks);
-      // Auto-switch to "Усі" if any new task is future-dated so the user
-      // immediately sees what was just added (avoids "looks like nothing saved").
-      const hasFuture = newTasks.some(t => t.deadline > today);
-      if (hasFuture && tab === 'today') {
+      // Clear project filter so freshly added tasks aren't hidden.
+      setProject(null);
+      // Switch to Вхідні (all) so the user immediately sees future-dated tasks.
+      if (newTasks.some(t => t.deadline > today) && tab === 'today') {
         setTab('all');
       }
-      // Drop any active project filter so new tasks aren't hidden by it.
-      setProject(null);
-      setMicOpen(false);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-dvh bg-page text-fg">
+    <div className="min-h-dvh flex flex-col bg-page text-fg">
       <Header tab={tab} onTab={setTab} />
       <ProjectChips projects={projects} active={project} onSelect={setProject} />
       <ReminderBanner tasks={reminders} />
-      <main className="px-4 py-3 pb-32">
+      <main className="flex-1 px-4 py-3">
         <TaskList
           tasks={filtered}
           onUpdate={update}
@@ -107,14 +102,7 @@ export default function Page() {
           onDelete={remove}
         />
       </main>
-      <Fab onClick={() => setMicOpen(true)} />
-      {micOpen && (
-        <MicScreen
-          onCancel={() => setMicOpen(false)}
-          onSubmit={handleSubmit}
-          loading={loading}
-        />
-      )}
+      <Composer onSubmit={handleSubmit} loading={loading} />
     </div>
   );
 }
