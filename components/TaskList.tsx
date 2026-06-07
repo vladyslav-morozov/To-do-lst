@@ -14,7 +14,7 @@ export function TaskList({
   onDelete: (id: string) => void;
 }) {
   if (tasks.length === 0) {
-    return <p className="text-neutral-500 text-sm py-8 text-center">Тут порожньо. Тапни мікрофон.</p>;
+    return <p className="text-faint text-sm py-8 text-center">Тут порожньо. Тапни мікрофон.</p>;
   }
   return (
     <div>

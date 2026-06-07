@@ -11,7 +11,7 @@ export function ProjectChips({
 }) {
   if (projects.length === 0) return null;
   return (
-    <div className="flex gap-2 overflow-x-auto px-4 py-2 border-b border-neutral-800 no-scrollbar">
+    <div className="flex gap-2 overflow-x-auto px-4 py-2 border-b border-border-tone no-scrollbar">
       <Chip label="Усі" active={active === null} onClick={() => onSelect(null)} />
       {projects.map(p => (
         <Chip key={p} label={p} active={active === p} onClick={() => onSelect(p)} />
@@ -24,8 +24,8 @@ function Chip({ label, active, onClick }: { label: string; active: boolean; onCl
   return (
     <button
       onClick={onClick}
-      className={`shrink-0 px-3 py-1.5 rounded-full text-sm whitespace-nowrap ${
-        active ? 'bg-white text-black' : 'bg-neutral-800 text-neutral-300'
+      className={`shrink-0 px-3 py-1.5 rounded-full text-sm whitespace-nowrap transition ${
+        active ? 'bg-fg text-page' : 'bg-input-bg text-muted'
       }`}
     >
       {label}

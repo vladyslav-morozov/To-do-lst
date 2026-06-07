@@ -93,7 +93,7 @@ export default function Page() {
   };
 
   return (
-    <div className="min-h-dvh bg-neutral-950 text-neutral-100">
+    <div className="min-h-dvh bg-page text-fg">
       <Header tab={tab} onTab={setTab} />
       <ProjectChips projects={projects} active={project} onSelect={setProject} />
       <ReminderBanner tasks={reminders} />
