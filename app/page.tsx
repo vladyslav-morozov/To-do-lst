@@ -94,7 +94,7 @@ export default function Page() {
       <Header tab={tab} onTab={setTab} />
       <ProjectChips projects={projects} active={project} onSelect={setProject} />
       <ReminderBanner tasks={reminders} />
-      <main className="flex-1 px-4 py-3">
+      <main className="flex-1 px-4 py-3 pb-40">
         <TaskList
           tasks={filtered}
           onUpdate={update}
