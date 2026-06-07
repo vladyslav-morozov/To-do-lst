@@ -20,7 +20,7 @@
   --accent-fg: #ffffff;
 }
 
-:where(.dark) {
+:root.dark {
   --page: #0a0a0a;
   --card: #171717;
   --input: #262626;
