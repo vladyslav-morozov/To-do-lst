@@ -25,9 +25,9 @@ export function isToday(task: Task): boolean {
   return task.deadline <= todayIso(); // includes overdue
 }
 
-export function defaultReminderAt(deadlineIso: string): string {
-  // Default reminder: deadline 09:00 local, minus 1 hour = 08:00 local same day
+export function defaultReminderAt(deadlineIso: string, hour = 8, minute = 0): string {
+  // Default reminder: deadline day at the configured local time (default 08:00).
   const [y, m, d] = deadlineIso.split('-').map(Number);
-  const local = new Date(y, (m ?? 1) - 1, d ?? 1, 8, 0, 0, 0);
+  const local = new Date(y, (m ?? 1) - 1, d ?? 1, hour, minute, 0, 0);
   return local.toISOString();
 }

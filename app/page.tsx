@@ -8,6 +8,7 @@ import { MicScreen } from '@/components/MicScreen';
 import { ReminderBanner } from '@/components/ReminderBanner';
 import { useTasks } from '@/hooks/useTasks';
 import { useActiveReminders } from '@/hooks/useReminders';
+import { useSettings } from '@/hooks/useSettings';
 import { isToday, todayIso, defaultReminderAt } from '@/lib/date';
 import type { Task } from '@/lib/types';
 import type { ParsedTask } from '@/lib/schema';
@@ -19,6 +20,7 @@ export default function Page() {
   const [loading, setLoading] = useState(false);
   const { tasks, addMany, update, remove, toggleDone } = useTasks();
   const reminders = useActiveReminders(tasks);
+  const { settings } = useSettings();
 
   const projects = useMemo(() => {
     const s = new Set<string>();
@@ -72,7 +74,7 @@ export default function Page() {
         priority: t.priority,
         estimateMin: t.estimateMin,
         deadline: t.deadline,
-        reminderAt: t.reminderAt ?? defaultReminderAt(t.deadline),
+        reminderAt: t.reminderAt ?? defaultReminderAt(t.deadline, settings.reminderHour, settings.reminderMinute),
         project: t.project ?? undefined,
         done: false,
         createdAt: new Date().toISOString(),
