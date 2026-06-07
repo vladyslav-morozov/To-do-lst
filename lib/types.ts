@@ -9,6 +9,7 @@ export type Task = {
   reminderAt?: string;       // ISO datetime
   done: boolean;
   createdAt: string;         // ISO datetime
+  completedAt?: string;      // ISO datetime — set when toggled to done
   pinnedToToday?: boolean;
   project?: string;
 };

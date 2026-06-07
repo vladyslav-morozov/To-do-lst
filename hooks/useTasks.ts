@@ -25,7 +25,13 @@ export function useTasks() {
   }, []);
 
   const toggleDone = useCallback((id: string) => {
-    saveTasks(loadTasks().map(t => (t.id === id ? { ...t, done: !t.done } : t)));
+    saveTasks(loadTasks().map(t => {
+      if (t.id !== id) return t;
+      const done = !t.done;
+      return done
+        ? { ...t, done: true, completedAt: new Date().toISOString() }
+        : { ...t, done: false, completedAt: undefined };
+    }));
   }, []);
 
   return { tasks, addMany, update, remove, toggleDone };

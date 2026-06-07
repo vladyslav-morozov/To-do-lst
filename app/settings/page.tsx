@@ -1,7 +1,10 @@
 'use client';
+import { useMemo } from 'react';
 import Link from 'next/link';
 import { useTheme } from '@/hooks/useTheme';
 import { useSettings } from '@/hooks/useSettings';
+import { useTasks } from '@/hooks/useTasks';
+import { computeStats } from '@/lib/stats';
 import type { Theme } from '@/lib/theme';
 
 const THEMES: { id: Theme; label: string; emoji: string }[] = [
@@ -13,6 +16,8 @@ const THEMES: { id: Theme; label: string; emoji: string }[] = [
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
   const { settings, update } = useSettings();
+  const { tasks } = useTasks();
+  const stats = useMemo(() => computeStats(tasks), [tasks]);
 
   const timeValue = `${pad(settings.reminderHour)}:${pad(settings.reminderMinute)}`;
 
@@ -34,6 +39,15 @@ export default function SettingsPage() {
       </header>
 
       <main className="px-4 py-6 space-y-8 max-w-md mx-auto">
+        <section>
+          <h2 className="text-xs uppercase tracking-wider text-muted mb-3">Продуктивність</h2>
+          <div className="grid grid-cols-3 gap-2">
+            <StatCard emoji="🔥" value={stats.streak} label={pluralDays(stats.streak)} />
+            <StatCard emoji="✅" value={stats.completedToday} label="сьогодні" />
+            <StatCard emoji="📅" value={stats.completedThisWeek} label="за тиждень" />
+          </div>
+        </section>
+
         <section>
           <h2 className="text-xs uppercase tracking-wider text-muted mb-3">Тема</h2>
           <div className="grid grid-cols-3 gap-2">
@@ -92,4 +106,22 @@ export default function SettingsPage() {
 
 function pad(n: number): string {
   return String(n).padStart(2, '0');
+}
+
+function StatCard({ emoji, value, label }: { emoji: string; value: number; label: string }) {
+  return (
+    <div className="bg-card border border-border-tone rounded-xl p-3 text-center">
+      <div className="text-2xl mb-1">{emoji}</div>
+      <div className="text-2xl font-semibold text-fg leading-none">{value}</div>
+      <div className="text-xs text-muted mt-1">{label}</div>
+    </div>
+  );
+}
+
+function pluralDays(n: number): string {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return 'день';
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return 'дні';
+  return 'днів';
 }
